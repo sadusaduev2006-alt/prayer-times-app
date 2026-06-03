@@ -512,6 +512,8 @@ option {
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s;
+    display: block;
+    margin: 0 auto;  /* Это центрирует кнопку */
 }
 
 .compass-btn:hover {
