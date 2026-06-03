@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Namaz Times | Время намаза и Кибла</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="badge">ДУМД</div>
+            <h1>Время намаза</h1>
+            <p class="subtitle">Точное расписание молитв</p>
+        </div>
+
+        <div class="city-selector">
+            <div class="select-wrapper">
+                <select id="city">
+                    <optgroup label="🏔️ Дагестан">
+                        <option value="makhachkala">Махачкала</option>
+                        <option value="derbent">Дербент</option>
+                        <option value="vachi">Вачи</option>
+                        <option value="buynaksk">Буйнакск</option>
+                        <option value="khasavyurt">Хасавюрт</option>
+                        <option value="kizilyurt">Кизилюрт</option>
+                        <option value="izberbash">Избербаш</option>
+                        <option value="kaspiysk">Каспийск</option>
+                    </optgroup>
+                    <optgroup label="🏙️ Другие города">
+                        <option value="moscow">Москва</option>
+                        <option value="kazan">Казань</option>
+                        <option value="ufa">Уфа</option>
+                        <option value="grozny">Грозный</option>
+                        <option value="ekaterinburg">Екатеринбург</option>
+                        <option value="novosibirsk">Новосибирск</option>
+                    </optgroup>
+                </select>
+                <span class="select-arrow">▼</span>
+            </div>
+        </div>
+
+        <div class="date-info">
+            <span class="hijri-date" id="hijriDate">—</span>
+            <span class="gregorian-date" id="gregorianDate">—</span>
+        </div>
+
+        <div class="prayer-list" id="prayerList"></div>
+
+        <div class="next-prayer-card">
+            <div class="next-prayer-label">Следующий намаз</div>
+            <div class="next-prayer-info">
+                <span class="next-prayer-name" id="nextPrayerName">—</span>
+                <span class="next-prayer-time" id="nextPrayerTime">—</span>
+            </div>
+            <div class="countdown-timer">
+                <span id="countdown">—:—:—</span>
+            </div>
+        </div>
+
+        <div class="footer">
+            <div class="source-info">
+                <span>📖 <span id="dataSource">ДУМД / Муфтият РД</span></span>
+                <button class="refresh-btn" id="refreshBtn">Обновить</button>
+            </div>
+            <div class="last-updated" id="lastUpdated"></div>
+        </div>
+    </div>
+
+    <button class="qibla-button" id="qiblaBtn">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 2v20M2 12h20"/>
+            <line x1="12" y1="2" x2="12" y2="6"/>
+            <line x1="12" y1="18" x2="12" y2="22"/>
+            <line x1="2" y1="12" x2="6" y2="12"/>
+            <line x1="18" y1="12" x2="22" y2="12"/>
+            <path d="M12 8v8"/>
+        </svg>
+        <span>Кибла</span>
+    </button>
+
+    <div class="modal" id="qiblaModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Направление на Киблу</h2>
+                <button class="modal-close" id="closeModalBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="compass-container">
+                    <div class="compass" id="compass">
+                        <div class="compass-needle" id="compassNeedle">
+                            <div class="needle-north"></div>
+                        </div>
+                        <div class="compass-markers">
+                            <span class="marker n">N</span>
+                            <span class="marker s">S</span>
+                            <span class="marker e">E</span>
+                            <span class="marker w">W</span>
+                        </div>
+                    </div>
+                    <div class="qibla-direction">
+                        <div class="qibla-arrow" id="qiblaArrow">🕋</div>
+                        <div class="qibla-angle" id="qiblaAngle">—°</div>
+                    </div>
+                </div>
+                <div class="compass-info">
+                    <p id="compassStatus">Ожидание разрешения...</p>
+                    <button class="compass-btn" id="startCompassBtn">Запустить компас</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
