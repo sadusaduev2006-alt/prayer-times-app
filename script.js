@@ -1,7 +1,6 @@
-// script.js - Полностью рабочая версия для iPhone
+// script.js - Рабочая версия для iPhone с красивым компасом
 let currentPrayerTimes = null;
 let countdownInterval = null;
-let compassWatchId = null;
 let deviceOrientationListener = null;
 
 // Конфигурация намазов
@@ -14,7 +13,7 @@ const prayers = [
     { name: 'Иша', key: 'isha', desc: 'Ночной' }
 ];
 
-// Точное время для Дагестана (по данным Муфтията РД)
+// Точное время для Дагестана
 const dagestanTimes = {
     makhachkala: { fajr: "02:15", sunrise: "04:30", dhuhr: "11:55", asr: "15:55", maghrib: "19:20", isha: "21:30" },
     derbent: { fajr: "02:20", sunrise: "04:35", dhuhr: "12:00", asr: "16:00", maghrib: "19:25", isha: "21:35" },
@@ -26,7 +25,6 @@ const dagestanTimes = {
     kaspiysk: { fajr: "02:16", sunrise: "04:31", dhuhr: "11:56", asr: "15:56", maghrib: "19:21", isha: "21:31" }
 };
 
-// Время для других городов
 const otherCitiesTimes = {
     moscow: { fajr: "02:00", sunrise: "04:15", dhuhr: "12:30", asr: "16:30", maghrib: "20:15", isha: "22:30" },
     kazan: { fajr: "01:45", sunrise: "04:00", dhuhr: "12:15", asr: "16:15", maghrib: "20:00", isha: "22:15" },
@@ -36,7 +34,7 @@ const otherCitiesTimes = {
     novosibirsk: { fajr: "02:40", sunrise: "04:55", dhuhr: "13:10", asr: "17:10", maghrib: "20:55", isha: "23:10" }
 };
 
-// Углы Киблы для городов
+// Углы Киблы
 const qiblaAngles = {
     makhachkala: 198, derbent: 196, vachi: 197, buynaksk: 197,
     khasavyurt: 198, kizilyurt: 197, izberbash: 197, kaspiysk: 198,
@@ -44,17 +42,15 @@ const qiblaAngles = {
     ekaterinburg: 175, novosibirsk: 182
 };
 
-// Инициализация при загрузке страницы
+// Инициализация
 document.addEventListener('DOMContentLoaded', () => {
     loadPrayerTimes();
     loadDates();
     
-    // Обработчик смены города
     document.getElementById('city').addEventListener('change', () => {
         loadPrayerTimes();
     });
     
-    // Обработчик кнопки обновления
     document.getElementById('refreshBtn').addEventListener('click', () => {
         loadPrayerTimes();
     });
@@ -68,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
     qiblaBtn.addEventListener('click', () => {
         modal.classList.add('active');
         updateQiblaAngle();
-        checkCompassSupport();
+        updateCompassStatus();
     });
     
     closeModalBtn.addEventListener('click', () => {
@@ -77,10 +73,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     startCompassBtn.addEventListener('click', () => {
-        requestCompassPermission();
+        startCompass();
     });
     
-    // Закрытие по клику вне окна
     modal.addEventListener('click', (e) => {
         if (e.target === modal) {
             modal.classList.remove('active');
@@ -89,7 +84,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// Обновление угла Киблы для выбранного города
 function updateQiblaAngle() {
     const city = document.getElementById('city').value;
     const qiblaAngle = qiblaAngles[city] || 198;
@@ -97,98 +91,86 @@ function updateQiblaAngle() {
     return qiblaAngle;
 }
 
-// Проверка поддержки компаса
-function checkCompassSupport() {
-    if (!window.DeviceOrientationEvent) {
-        document.getElementById('compassStatus').innerHTML = '❌ Компас не поддерживается вашим устройством';
-        return false;
-    }
-    
-    // Для iOS 13+
-    if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-        document.getElementById('compassStatus').innerHTML = '📱 Нажмите кнопку "Разрешить компас" ниже';
-        document.getElementById('startCompassBtn').style.display = 'block';
-        return false;
+function updateCompassStatus() {
+    const statusDiv = document.getElementById('compassStatus');
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+        statusDiv.innerHTML = '📱 Для работы компаса нажмите кнопку ниже и разрешите доступ';
+    } else if (typeof DeviceOrientationEvent !== 'undefined') {
+        statusDiv.innerHTML = '🟢 Компас готов. Нажмите "Запустить компас"';
     } else {
-        // Для Android и старых iOS
-        document.getElementById('startCompassBtn').style.display = 'block';
-        document.getElementById('compassStatus').innerHTML = '🟢 Нажмите "Запустить компас"';
-        return true;
+        statusDiv.innerHTML = '❌ Компас не поддерживается вашим устройством';
     }
 }
 
-// Запрос разрешения для iOS
-function requestCompassPermission() {
-    if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-        // iOS: запрос разрешения
-        DeviceOrientationEvent.requestPermission()
-            .then(permissionState => {
-                if (permissionState === 'granted') {
-                    document.getElementById('compassStatus').innerHTML = '✅ Разрешение получено! Компас активен';
-                    startCompass();
-                } else {
-                    document.getElementById('compassStatus').innerHTML = '❌ Доступ к компасу запрещён. Разрешите в настройках Safari';
-                }
-            })
-            .catch(error => {
-                console.error('Ошибка:', error);
-                document.getElementById('compassStatus').innerHTML = '❌ Ошибка доступа. Проверьте настройки конфиденциальности';
-            });
-    } else {
-        // Android: просто запускаем
-        startCompass();
-    }
-}
-
-// Запуск компаса
 function startCompass() {
     const qiblaAngle = updateQiblaAngle();
+    const statusDiv = document.getElementById('compassStatus');
+    const startBtn = document.getElementById('startCompassBtn');
     
-    // Останавливаем предыдущий listener
-    if (deviceOrientationListener) {
-        window.removeEventListener('deviceorientation', deviceOrientationListener);
-    }
-    
-    // Создаём новый listener
-    deviceOrientationListener = (event) => {
-        // alpha - направление на север (0-360 градусов)
+    // Функция обработки ориентации
+    const handleOrientation = (event) => {
         let alpha = event.alpha;
-        
         if (alpha !== null && alpha !== undefined) {
-            // Поворачиваем стрелку компаса в противоположную сторону
+            // Стрелка компаса
             const needle = document.getElementById('compassNeedle');
             if (needle) {
                 needle.style.transform = `translate(-50%, -50%) rotate(${-alpha}deg)`;
             }
-            
-            // Рассчитываем направление на Киблу
+            // Направление на Киблу
             let qiblaDirection = (qiblaAngle - alpha + 360) % 360;
             const qiblaArrow = document.getElementById('qiblaArrow');
             if (qiblaArrow) {
                 qiblaArrow.style.transform = `rotate(${qiblaDirection}deg)`;
             }
-            
-            // Обновляем статус
-            document.getElementById('compassStatus').innerHTML = `🧭 Компас активен | Поверните телефон`;
-        } else {
-            document.getElementById('compassStatus').innerHTML = '⚠️ Нет данных с датчиков';
+            statusDiv.innerHTML = '🧭 Компас работает | Поворачивайте телефон';
+            startBtn.style.display = 'none';
         }
     };
     
-    window.addEventListener('deviceorientation', deviceOrientationListener);
-    document.getElementById('compassStatus').innerHTML = '🧭 Компас запущен. Поворачивайте телефон!';
-    document.getElementById('startCompassBtn').style.display = 'none';
+    // Для iOS - запрос разрешения
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+        DeviceOrientationEvent.requestPermission()
+            .then(permissionState => {
+                if (permissionState === 'granted') {
+                    window.addEventListener('deviceorientation', handleOrientation);
+                    statusDiv.innerHTML = '✅ Компас активирован! Поворачивайте телефон';
+                    startBtn.style.display = 'none';
+                } else {
+                    statusDiv.innerHTML = '❌ Доступ запрещён. Разрешите в настройках Safari → Конфиденциальность → Движение и ориентация';
+                }
+            })
+            .catch(error => {
+                console.error(error);
+                statusDiv.innerHTML = '❌ Ошибка доступа. Проверьте настройки конфиденциальности';
+            });
+    } 
+    // Для Android и других
+    else if (typeof DeviceOrientationEvent !== 'undefined') {
+        window.addEventListener('deviceorientation', handleOrientation);
+        statusDiv.innerHTML = '✅ Компас запущен!';
+        startBtn.style.display = 'none';
+    } 
+    else {
+        statusDiv.innerHTML = '❌ Компас не поддерживается';
+    }
+    
+    // Сохраняем listener для остановки
+    if (deviceOrientationListener) {
+        window.removeEventListener('deviceorientation', deviceOrientationListener);
+    }
+    deviceOrientationListener = handleOrientation;
 }
 
-// Остановка компаса
 function stopCompass() {
     if (deviceOrientationListener) {
         window.removeEventListener('deviceorientation', deviceOrientationListener);
         deviceOrientationListener = null;
     }
+    const startBtn = document.getElementById('startCompassBtn');
+    if (startBtn) startBtn.style.display = 'block';
 }
 
-// Загрузка дат
+// Остальные функции (работа с намазами)
 function loadDates() {
     const now = new Date();
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
@@ -196,154 +178,97 @@ function loadDates() {
     document.getElementById('hijriDate').textContent = getHijriDate();
 }
 
-// Получение хиджра даты
 function getHijriDate() {
-    const hijriMonths = [
-        'Мухаррам', 'Сафар', 'Раби-уль-авваль', 'Раби-уль-ахир',
-        'Джумада-уль-уля', 'Джумада-уль-ахира', 'Раджаб', 'Шаабан',
-        'Рамадан', 'Шавваль', 'Зуль-Каада', 'Зуль-Хиджа'
-    ];
-    
+    const hijriMonths = ['Мухаррам', 'Сафар', 'Раби-уль-авваль', 'Раби-уль-ахир', 'Джумада-уль-уля', 'Джумада-уль-ахира', 'Раджаб', 'Шаабан', 'Рамадан', 'Шавваль', 'Зуль-Каада', 'Зуль-Хиджа'];
     const now = new Date();
-    const gregorianYear = now.getFullYear();
-    const hijriYear = gregorianYear - 622;
-    const dayOfYear = Math.floor((now - new Date(gregorianYear, 0, 1)) / (1000 * 60 * 60 * 24));
+    const hijriYear = now.getFullYear() - 622;
+    const dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 1)) / (1000 * 60 * 60 * 24));
     const month = Math.floor(dayOfYear / 29.5) % 12;
     const day = (dayOfYear % 29.5) + 1;
-    
     return `${Math.floor(day)} ${hijriMonths[month]} ${hijriYear} г. Хиджры`;
 }
 
-// Основная функция загрузки времени намаза
 function loadPrayerTimes() {
     const city = document.getElementById('city').value;
-    
-    if (dagestanTimes[city]) {
-        currentPrayerTimes = dagestanTimes[city];
-    } else if (otherCitiesTimes[city]) {
-        currentPrayerTimes = otherCitiesTimes[city];
-    } else {
-        currentPrayerTimes = dagestanTimes.makhachkala;
-    }
-    
+    currentPrayerTimes = dagestanTimes[city] || otherCitiesTimes[city] || dagestanTimes.makhachkala;
     updatePrayerTimesUI(currentPrayerTimes);
     updateNextPrayer();
     updateLastUpdated();
 }
 
-// Обновление интерфейса
 function updatePrayerTimesUI(times) {
     const prayerList = document.getElementById('prayerList');
     prayerList.innerHTML = '';
-    
     prayers.forEach(prayer => {
         const time = times[prayer.key] || '--:--';
         const item = document.createElement('div');
         item.className = 'prayer-item';
         item.setAttribute('data-prayer', prayer.key);
-        item.innerHTML = `
-            <div class="prayer-info">
-                <span class="prayer-name">${prayer.name}</span>
-                <span class="prayer-desc">${prayer.desc}</span>
-            </div>
-            <div class="prayer-time">${time}</div>
-        `;
+        item.innerHTML = `<div class="prayer-info"><span class="prayer-name">${prayer.name}</span><span class="prayer-desc">${prayer.desc}</span></div><div class="prayer-time">${time}</div>`;
         prayerList.appendChild(item);
     });
 }
 
-// Определение следующего намаза
 function getNextPrayer() {
     if (!currentPrayerTimes) return null;
-    
     const now = new Date();
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
-    
     for (const prayer of prayers) {
         if (currentPrayerTimes[prayer.key]) {
             const [hours, minutes] = currentPrayerTimes[prayer.key].split(':');
             const prayerMinutes = parseInt(hours) * 60 + parseInt(minutes);
-            
             if (prayerMinutes > currentMinutes) {
-                return {
-                    ...prayer,
-                    time: currentPrayerTimes[prayer.key],
-                    minutes: prayerMinutes
-                };
+                return { ...prayer, time: currentPrayerTimes[prayer.key] };
             }
         }
     }
-    
-    return {
-        ...prayers[0],
-        time: currentPrayerTimes.fajr,
-        minutes: null
-    };
+    return { ...prayers[0], time: currentPrayerTimes.fajr };
 }
 
-// Обновление следующего намаза
 function updateNextPrayer() {
     const nextPrayer = getNextPrayer();
-    
     if (nextPrayer) {
         document.getElementById('nextPrayerName').textContent = nextPrayer.name;
         document.getElementById('nextPrayerTime').textContent = nextPrayer.time;
-        
         highlightActivePrayer(nextPrayer.key);
-        
         if (countdownInterval) clearInterval(countdownInterval);
         startCountdown(nextPrayer.time);
     }
 }
 
-// Запуск обратного отсчёта
 function startCountdown(prayerTime) {
     function updateCountdown() {
         const now = new Date();
         const [hours, minutes] = prayerTime.split(':');
         const prayerDate = new Date();
         prayerDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-        
-        if (prayerDate < now) {
-            prayerDate.setDate(prayerDate.getDate() + 1);
-        }
-        
+        if (prayerDate < now) prayerDate.setDate(prayerDate.getDate() + 1);
         const diff = prayerDate - now;
-        
         if (diff <= 0) {
             document.getElementById('countdown').textContent = '00:00:00';
             loadPrayerTimes();
             return;
         }
-        
         const hoursRem = Math.floor(diff / (1000 * 60 * 60));
         const minutesRem = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
         const secondsRem = Math.floor((diff % (1000 * 60)) / 1000);
-        
-        document.getElementById('countdown').textContent = 
-            `${String(hoursRem).padStart(2, '0')}:${String(minutesRem).padStart(2, '0')}:${String(secondsRem).padStart(2, '0')}`;
+        document.getElementById('countdown').textContent = `${String(hoursRem).padStart(2, '0')}:${String(minutesRem).padStart(2, '0')}:${String(secondsRem).padStart(2, '0')}`;
     }
-    
     updateCountdown();
     countdownInterval = setInterval(updateCountdown, 1000);
 }
 
-// Подсветка активного намаза
 function highlightActivePrayer(activeKey) {
     const items = document.querySelectorAll('.prayer-item');
     items.forEach(item => {
         item.classList.remove('active');
         const prayerName = item.querySelector('.prayer-name').textContent;
         const activePrayer = prayers.find(p => p.key === activeKey);
-        if (activePrayer && prayerName === activePrayer.name) {
-            item.classList.add('active');
-        }
+        if (activePrayer && prayerName === activePrayer.name) item.classList.add('active');
     });
 }
 
-// Обновление времени
 function updateLastUpdated() {
     const now = new Date();
-    const formatted = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-    document.getElementById('lastUpdated').textContent = `Обновлено: ${formatted}`;
+    document.getElementById('lastUpdated').textContent = `Обновлено: ${now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`;
 }
