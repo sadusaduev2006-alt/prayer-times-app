@@ -482,19 +482,32 @@ option {
 .marker.e { right: 8px; top: 50%; transform: translateY(-50%); }
 .marker.w { left: 8px; top: 50%; transform: translateY(-50%); }
 
-/* Qibla direction */
+/* Qibla direction - улучшенная стрелка */
 .qibla-direction {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.75rem;
     text-align: center;
+}
+
+.qibla-direction::before {
+    content: "🕋 Направление на Мекку";
+    font-size: 0.75rem;
+    color: var(--text-light);
+    letter-spacing: 0.3px;
 }
 
 .qibla-arrow {
     font-size: 3rem;
     transition: transform 0.1s ease-out;
-    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.15));
+    display: inline-block;
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: #e74c3c;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .qibla-angle {
@@ -594,6 +607,14 @@ option {
         width: 18px;
         height: 18px;
     }
+
+    .qibla-arrow {
+        font-size: 2.5rem;
+    }
+
+    .qibla-angle {
+        font-size: 1.25rem;
+    }
 }
 
 /* Dark mode */
@@ -616,4 +637,26 @@ option {
     #compassStatus {
         background: rgba(45, 212, 191, 0.1);
     }
+    .qibla-arrow {
+        background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+        background-clip: text;
+        -webkit-background-clip: text;
+        color: #ff6b6b;
+    }
+}
+
+/* Анимация для стрелки Киблы */
+@keyframes qiblaPulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.05);
+        opacity: 0.9;
+    }
+}
+
+.qibla-arrow {
+    animation: qiblaPulse 2s ease-in-out infinite;
 }
