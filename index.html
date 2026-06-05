@@ -19,7 +19,7 @@
             <div class="select-wrapper">
                 <select id="city">
                     <optgroup label="🏔️ Дагестан">
-                        <option value="makhachkala">Махачкала</option>
+                        <option value="makhachkala" selected>Махачкала</option>
                         <option value="derbent">Дербент</option>
                         <option value="vachi">Вачи</option>
                         <option value="buynaksk">Буйнакск</option>
@@ -46,7 +46,11 @@
             <span class="gregorian-date" id="gregorianDate">—</span>
         </div>
 
-        <div class="prayer-list" id="prayerList"></div>
+        <div class="prayer-list" id="prayerList">
+            <div class="prayer-item">
+                <div class="prayer-info">Загрузка...</div>
+            </div>
+        </div>
 
         <div class="next-prayer-card">
             <div class="next-prayer-label">Следующий намаз</div>
@@ -61,7 +65,7 @@
 
         <div class="footer">
             <div class="source-info">
-                <span>📖 <span id="dataSource">ДУМД / Муфтият РД</span></span>
+                <span>📖 <span id="dataSource">ДУМД</span></span>
                 <button class="refresh-btn" id="refreshBtn">Обновить</button>
             </div>
             <div class="last-updated" id="lastUpdated"></div>
@@ -106,8 +110,8 @@
                     </div>
                 </div>
                 <div class="compass-info">
-                    <p id="compassStatus">Ожидание разрешения...</p>
-                    <button class="compass-btn" id="startCompassBtn">Запустить компас</button>
+                    <div id="compassStatus">📱 Нажмите кнопку ниже</div>
+                    <button class="compass-btn" id="startCompassBtn">▶ Запустить компас</button>
                 </div>
             </div>
         </div>
